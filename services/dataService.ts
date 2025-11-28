@@ -8,11 +8,14 @@ import {
   DEFAULT_SETTINGS,
   MOCK_USERS
 } from '../constants';
-import { Appointment, Client, Professional, Service, Transaction, AppointmentStatus, SalonSettings, User } from '../types';
+import { Appointment, Client, Professional, Service, Transaction, AppointmentStatus, SalonSettings, User, UserRole } from '../types';
 
 // Simple in-memory store for MVP simulation
 export const useDataService = () => {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
+  
+  // Use state for users to allow registration
+  const [users, setUsers] = useState<User[]>(MOCK_USERS);
   
   const [appointments, setAppointments] = useState<Appointment[]>(MOCK_APPOINTMENTS);
   const [clients, setClients] = useState<Client[]>(MOCK_CLIENTS);
@@ -22,13 +25,33 @@ export const useDataService = () => {
   const [settings, setSettings] = useState<SalonSettings>(DEFAULT_SETTINGS);
 
   // --- AUTH ---
-  const login = (email: string) => {
-    const user = MOCK_USERS.find(u => u.email === email);
+  const login = (email: string, password?: string) => {
+    // In a real app, we would verify the password here.
+    // For this mock, we just check if the email exists in our users list.
+    const user = users.find(u => u.email === email);
     if (user) {
       setCurrentUser(user);
       return true;
     }
     return false;
+  };
+
+  const register = (name: string, email: string, password?: string) => {
+    if (users.find(u => u.email === email)) {
+      return false; // User already exists
+    }
+
+    const newUser: User = {
+      id: Math.random().toString(36).substr(2, 9),
+      name,
+      email,
+      role: UserRole.OWNER, // Default new signups to Owner
+      photoUrl: `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=random`
+    };
+
+    setUsers([...users, newUser]);
+    setCurrentUser(newUser);
+    return true;
   };
 
   const logout = () => {
@@ -162,6 +185,7 @@ export const useDataService = () => {
   return {
     currentUser,
     login,
+    register,
     logout,
     appointments,
     clients,

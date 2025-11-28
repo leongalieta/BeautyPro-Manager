@@ -38,7 +38,10 @@ import {
   DollarSign,
   Phone,
   Mail,
-  Check
+  Check,
+  ArrowRight,
+  LogIn,
+  UserPlus
 } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 
@@ -51,39 +54,171 @@ const PRESET_COLORS = [
 
 // --- AUTH VIEW ---
 
-const LoginView = ({ onLogin }: { onLogin: (email: string) => void }) => {
+const AuthView = ({ 
+    onLogin, 
+    onRegister 
+}: { 
+    onLogin: (email: string, password?: string) => boolean,
+    onRegister: (name: string, email: string, password?: string) => boolean
+}) => {
+  const [isRegistering, setIsRegistering] = useState(false);
+  const [formData, setFormData] = useState({ name: '', email: '', password: '' });
+  const [error, setError] = useState('');
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+
+    if (isRegistering) {
+        // Register Logic
+        if (!formData.name || !formData.email || !formData.password) {
+            setError('Por favor, preencha todos os campos.');
+            return;
+        }
+        const success = onRegister(formData.name, formData.email, formData.password);
+        if (!success) {
+            setError('Este email já está cadastrado.');
+        }
+    } else {
+        // Login Logic
+        if (!formData.email || !formData.password) {
+            setError('Por favor, preencha email e senha.');
+            return;
+        }
+        const success = onLogin(formData.email, formData.password);
+        if (!success) {
+            setError('Email ou senha incorretos.');
+        }
+    }
+  };
+
+  const handleDemoLogin = (email: string) => {
+      onLogin(email);
+  }
+
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-      <Card className="w-full max-w-md p-8">
-        <div className="text-center mb-8">
-           <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-primary-100 mb-4">
-              <Sparkles className="h-8 w-8 text-primary-600" />
-           </div>
-           <h1 className="text-2xl font-bold text-gray-900">BeautyPro Manager</h1>
-           <p className="text-gray-500 mt-2">Selecione um usuário para entrar (Demo)</p>
+    <div className="min-h-screen bg-gradient-to-br from-primary-50 to-secondary-50 flex items-center justify-center p-4">
+      <Card className="w-full max-w-4xl grid md:grid-cols-2 overflow-hidden shadow-2xl rounded-3xl border-0">
+        
+        {/* Left Side - Branding */}
+        <div className="bg-gradient-to-br from-primary-600 to-secondary-600 p-12 text-white flex flex-col justify-between relative overflow-hidden">
+             <div className="absolute top-0 left-0 w-full h-full opacity-10 pointer-events-none">
+                 <div className="absolute top-10 left-10 w-32 h-32 rounded-full bg-white blur-3xl"></div>
+                 <div className="absolute bottom-10 right-10 w-48 h-48 rounded-full bg-white blur-3xl"></div>
+             </div>
+             
+             <div>
+                <div className="inline-flex items-center space-x-2 bg-white/20 backdrop-blur-sm px-4 py-2 rounded-full mb-8">
+                    <Sparkles className="h-5 w-5" />
+                    <span className="font-semibold text-sm">Gestão Completa</span>
+                </div>
+                <h1 className="text-4xl md:text-5xl font-bold leading-tight mb-4">
+                    BeautyPro Manager
+                </h1>
+                <p className="text-primary-100 text-lg">
+                    Transforme a gestão do seu salão com simplicidade e inteligência.
+                </p>
+             </div>
+
+             <div className="mt-12 text-sm text-primary-200">
+                &copy; 2025 BeautyPro Inc.
+             </div>
         </div>
 
-        <div className="space-y-4">
-           {MOCK_USERS.map(user => (
-             <button
-                key={user.id}
-                onClick={() => onLogin(user.email)}
-                className="w-full flex items-center p-4 border border-gray-200 rounded-xl hover:border-primary-500 hover:bg-primary-50 transition-all group text-left"
-             >
-                <img src={user.photoUrl} alt={user.name} className="w-12 h-12 rounded-full mr-4 object-cover" />
-                <div>
-                   <h3 className="font-semibold text-gray-900 group-hover:text-primary-700">{user.name}</h3>
-                   <span className="text-xs font-medium px-2 py-0.5 rounded bg-gray-100 text-gray-600 group-hover:bg-primary-200 group-hover:text-primary-800">
-                      {user.role === UserRole.OWNER ? 'Dono(a)' : user.role === UserRole.PROFESSIONAL ? 'Profissional' : 'Recepção'}
-                   </span>
+        {/* Right Side - Form */}
+        <div className="p-8 md:p-12 bg-white flex flex-col justify-center">
+            <div className="mb-8">
+                <h2 className="text-2xl font-bold text-gray-900 mb-2">
+                    {isRegistering ? 'Criar Conta' : 'Bem-vindo de volta'}
+                </h2>
+                <p className="text-gray-500">
+                    {isRegistering ? 'Comece a gerenciar seu negócio hoje.' : 'Entre para acessar seu painel.'}
+                </p>
+            </div>
+
+            <form onSubmit={handleSubmit} className="space-y-4">
+                {isRegistering && (
+                    <div className="animate-in slide-in-from-left-4 fade-in duration-300">
+                         <Input 
+                            label="Nome Completo"
+                            placeholder="Ex: Ana Silva"
+                            value={formData.name}
+                            onChange={e => setFormData({...formData, name: e.target.value})}
+                            leftIcon={<UserIcon className="h-4 w-4" />}
+                            required={isRegistering}
+                        />
+                    </div>
+                )}
+                
+                <Input 
+                    label="Email"
+                    type="email"
+                    placeholder="seu@email.com"
+                    value={formData.email}
+                    onChange={e => setFormData({...formData, email: e.target.value})}
+                    leftIcon={<Mail className="h-4 w-4" />}
+                    required
+                />
+                
+                <Input 
+                    label="Senha"
+                    type="password"
+                    placeholder="••••••••"
+                    value={formData.password}
+                    onChange={e => setFormData({...formData, password: e.target.value})}
+                    leftIcon={<Lock className="h-4 w-4" />}
+                    required
+                />
+
+                {error && <p className="text-red-600 text-sm font-medium">{error}</p>}
+
+                <Button type="submit" className="w-full py-3 shadow-lg shadow-primary-500/20">
+                    {isRegistering ? (
+                        <>
+                            <UserPlus className="h-4 w-4 mr-2" />
+                            Cadastrar Grátis
+                        </>
+                    ) : (
+                         <>
+                            <LogIn className="h-4 w-4 mr-2" />
+                            Entrar
+                        </>
+                    )}
+                </Button>
+            </form>
+
+            <div className="mt-6 pt-6 border-t border-gray-100 text-center">
+                <p className="text-sm text-gray-600">
+                    {isRegistering ? 'Já tem uma conta?' : 'Ainda não tem conta?'}
+                    <button 
+                        onClick={() => { setIsRegistering(!isRegistering); setError(''); setFormData({name:'', email:'', password:''}) }}
+                        className="ml-2 font-semibold text-primary-600 hover:text-primary-700 transition-colors"
+                    >
+                        {isRegistering ? 'Fazer Login' : 'Criar Conta'}
+                    </button>
+                </p>
+            </div>
+
+            {/* Quick Access for Demo */}
+            {!isRegistering && (
+                <div className="mt-8 pt-6 border-t border-gray-100">
+                    <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3 text-center">
+                        Acesso Rápido (Demo)
+                    </p>
+                    <div className="flex gap-2 justify-center">
+                        {MOCK_USERS.map(u => (
+                            <button 
+                                key={u.id}
+                                onClick={() => handleDemoLogin(u.email)}
+                                title={`${u.name} (${u.role})`}
+                                className="w-10 h-10 rounded-full overflow-hidden border-2 border-transparent hover:border-primary-500 hover:scale-110 transition-all shadow-sm"
+                            >
+                                <img src={u.photoUrl} alt={u.name} className="w-full h-full object-cover" />
+                            </button>
+                        ))}
+                    </div>
                 </div>
-                <ChevronRight className="ml-auto text-gray-400 group-hover:text-primary-500" />
-             </button>
-           ))}
-        </div>
-        
-        <div className="mt-8 text-center text-xs text-gray-400">
-           Versão MVP 1.0.0
+            )}
         </div>
       </Card>
     </div>
@@ -1366,6 +1501,7 @@ const App: React.FC = () => {
   const { 
     currentUser,
     login,
+    register,
     logout,
     appointments, 
     clients, 
@@ -1388,12 +1524,23 @@ const App: React.FC = () => {
   } = useDataService();
 
   // Handle Login
-  const handleLogin = (email: string) => {
-    if (login(email)) {
+  const handleLogin = (email: string, password?: string) => {
+    if (login(email, password)) {
         setAppMode('admin');
         setCurrentView('dashboard');
+        return true;
     }
+    return false;
   };
+  
+  const handleRegister = (name: string, email: string, password?: string) => {
+      if (register(name, email, password)) {
+          setAppMode('admin');
+          setCurrentView('dashboard');
+          return true;
+      }
+      return false;
+  }
 
   const handleLogout = () => {
     logout();
@@ -1402,7 +1549,7 @@ const App: React.FC = () => {
 
   // Render Logic
   if (appMode === 'auth') {
-      return <LoginView onLogin={handleLogin} />;
+      return <AuthView onLogin={handleLogin} onRegister={handleRegister} />;
   }
 
   if (appMode === 'client') {
